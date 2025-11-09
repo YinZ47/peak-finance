@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.models import User
 from app.schemas import UserRegister, UserLogin, Token, UserProfile
-from app.security import hash_password, verify_password, create_access_token
+from app.security import hash_password, verify_password, create_access_token, get_current_user
 from app.services.audit import log_action
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -76,7 +76,3 @@ def logout(response: Response):
 def get_me(user: User = Depends(get_current_user)):
     """Get current user profile."""
     return user
-
-
-# Import after function definitions to avoid circular import
-from app.security import get_current_user
