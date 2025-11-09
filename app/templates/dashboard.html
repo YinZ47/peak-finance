@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Peak Finance{% endblock %}
+
+{% block content %}
+<section class="dashboard-section">
+    <div class="container">
+        <div class="dashboard-header">
+            <h1>Financial Dashboard</h1>
+            <p>Your complete financial overview</p>
+        </div>
+
+        <!-- Dashboard content will be loaded via JavaScript -->
+        <div id="dashboardContent">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading your financial data...</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Check auth on page load
+if (!Auth.isAuthenticated()) {
+    window.location.href = '/auth';
+}
+
+// Load dashboard data
+async function loadDashboard() {
+    try {
+        const summary = await API.get('/calc/dashboard');
+        // Render dashboard (implement in next phase)
+        console.log('Dashboard data:', summary);
+    } catch (error) {
+        showToast('Failed to load dashboard', 'error');
+    }
+}
+
+loadDashboard();
+</script>
+{% endblock %}

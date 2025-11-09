@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Hero Section -->
+<section id="home" class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>Smart Financial Planning for a <span class="gradient-text">Better Tomorrow</span></h1>
+                <p>AI-powered personal finance advisor designed for Bangladesh. Get personalized budgeting advice, predict future costs, and understand loan eligibility—all educational, all free.</p>
+                <div class="hero-buttons">
+                    <a href="/auth?mode=register" class="btn btn-primary">Get Started Free</a>
+                    <a href="#features" class="btn btn-secondary">See How It Works</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-shield-alt"></i>
+                        <div>
+                            <h3>100%</h3>
+                            <p>Educational</p>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-lock"></i>
+                        <div>
+                            <h3>Secure</h3>
+                            <p>Data Privacy</p>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-code"></i>
+                        <div>
+                            <h3>Open</h3>
+                            <p>Source Code</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-image">
+                <img src="https://imagedelivery.net/xMnwd1aoy-PQ8Klk2JdGdw/e976b8f7-bf2a-4190-58c8-e1f21bf2c500/public" 
+                     alt="Financial dashboard" width="600" height="480">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section id="features" class="section">
+    <div class="container">
+        <div class="section-header">
+            <h2>Everything You Need to Master Your Finances</h2>
+            <p>Professional-grade tools, simplified for everyday users</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <h3>AI Financial Advisor</h3>
+                <p>Get personalized insights based on your income, expenses, and goals. Educational AI guidance in Bengali and English.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-calculator"></i>
+                </div>
+                <h3>Loan Calculator</h3>
+                <p>Calculate EMI, DTI ratio, and loan affordability. Stress-test scenarios with interest rate changes and income fluctuations.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3>Inflation Forecasting</h3>
+                <p>Project future costs of essentials based on CPI data. Plan for rice, utilities, education, and more.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-piggy-bank"></i>
+                </div>
+                <h3>Goal Tracking</h3>
+                <p>Set savings goals for emergency funds, education, or hajj. Track progress and get actionable recommendations.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+                <h3>Expense Management</h3>
+                <p>Track fixed and variable expenses. Import bank statements (CSV). Categorize spending automatically.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3>Privacy-First</h3>
+                <p>Your data stays yours. No sharing with third parties. Option to opt-out of AI training data.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works -->
+<section id="how-it-works" class="section bg-light">
+    <div class="container">
+        <div class="section-header">
+            <h2>How Peak Finance Works</h2>
+            <p>Three simple steps to financial clarity</p>
+        </div>
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3>Create Your Profile</h3>
+                <p>Sign up with email. Add your monthly income, expenses, and debts. Set your risk tolerance.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3>Use Smart Calculators</h3>
+                <p>Calculate loan affordability, project inflation, plan debt payoff. All formulas transparent and educational.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3>Get AI Insights</h3>
+                <p>Receive personalized budget advice, spending alerts, and goal recommendations. Chat with AI for financial questions.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Tools Preview -->
+<section id="tools" class="section">
+    <div class="container">
+        <div class="section-header">
+            <h2>Financial Calculators</h2>
+            <p>Professional tools, zero cost</p>
+        </div>
+        <div class="tools-grid">
+            <div class="tool-card">
+                <h3><i class="fas fa-home"></i> Loan Pre-Assessment</h3>
+                <p>Calculate DTI ratio and affordable EMI based on income and existing debts.</p>
+                <a href="/dashboard#loan-calc" class="btn btn-outline">Try Calculator</a>
+            </div>
+            <div class="tool-card">
+                <h3><i class="fas fa-calendar-check"></i> Payoff Planner</h3>
+                <p>See how fast you can pay off debt with different payment amounts.</p>
+                <a href="/dashboard#payoff" class="btn btn-outline">Plan Payoff</a>
+            </div>
+            <div class="tool-card">
+                <h3><i class="fas fa-chart-area"></i> Inflation Forecaster</h3>
+                <p>Project costs of essentials over 1-30 years with Bangladesh CPI data.</p>
+                <a href="/dashboard#inflation" class="btn btn-outline">Forecast Costs</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Compliance & Disclaimers -->
+<section id="about" class="section bg-light">
+    <div class="container">
+        <div class="compliance-box">
+            <h3><i class="fas fa-info-circle"></i> Important Information</h3>
+            <div class="disclaimer-grid">
+                <div class="disclaimer-item">
+                    <h4>Educational Only</h4>
+                    <p>Peak Finance is an educational tool. We do not provide financial advice, loan approvals, or e-KYC services.</p>
+                </div>
+                <div class="disclaimer-item">
+                    <h4>Not Licensed</h4>
+                    <p>We are not a licensed financial institution. All calculations are estimates. Consult professionals for advice.</p>
+                </div>
+                <div class="disclaimer-item">
+                    <h4>Bangladesh Compliance</h4>
+                    <p>Built with awareness of BFIU e-KYC and AML/CFT requirements. Regulated features disabled in educational mode.</p>
+                </div>
+                <div class="disclaimer-item">
+                    <h4>Open Source</h4>
+                    <p>Transparent formulas. Audit our code on GitHub. Contribute to improve financial literacy in Bangladesh.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <div class="container">
+        <h2>Ready to Take Control of Your Finances?</h2>
+        <p>Join thousands learning smarter money management</p>
+        <a href="/auth?mode=register" class="btn btn-primary btn-lg">Start Your Financial Journey</a>
+    </div>
+</section>
+{% endblock %}

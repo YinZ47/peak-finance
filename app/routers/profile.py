@@ -23,7 +23,7 @@ def update_profile(
     user: User = Depends(get_current_user)
 ):
     """Update user profile."""
-    update_data = updates.dict(exclude_unset=True)
+    update_data = updates.model_dump(exclude_unset=True)
     
     for field, value in update_data.items():
         setattr(user, field, value)
