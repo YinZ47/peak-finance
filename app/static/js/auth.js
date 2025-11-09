@@ -20,6 +20,8 @@ const Auth = {
       const user = await API.get('/auth/me');
       return user;
     } catch (error) {
+      // Clear invalid token
+      localStorage.removeItem('access_token');
       return null;
     }
   },
@@ -86,72 +88,88 @@ const Auth = {
     if (this.isAuthenticated()) {
       const user = await this.getCurrentUser();
       if (user) {
-        navAuth.classList.add('hidden');
-        navUser.classList.remove('hidden');
-        userEmail.textContent = user.email;
+        navAuth?.classList.add('hidden');
+        navUser?.classList.remove('hidden');
+        if (userEmail) userEmail.textContent = user.email;
+      } else {
+        // Token invalid, show login
+        navAuth?.classList.remove('hidden');
+        navUser?.classList.add('hidden');
       }
     } else {
-      navAuth.classList.remove('hidden');
-      navUser.classList.add('hidden');
+      navAuth?.classList.remove('hidden');
+      navUser?.classList.add('hidden');
     }
   }
 };
 
-// Login form handler
-document.getElementById('loginFormElement')?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  
-  const email = document.getElementById('loginEmail').value;
-  const password = document.getElementById('loginPassword').value;
-  const btnText = document.getElementById('loginBtnText');
-  const btnLoader = document.getElementById('loginBtnLoader');
+// Wait for DOM to be ready
+document.addEventListener('DOMContentLoaded', function() {
+  // Login form handler
+  const loginForm = document.getElementById('loginFormElement');
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      const btnText = document.getElementById('loginBtnText');
+      const btnLoader = document.getElementById('loginBtnLoader');
 
-  btnText.classList.add('hidden');
-  btnLoader.classList.remove('hidden');
+      btnText.classList.add('hidden');
+      btnLoader.classList.remove('hidden');
 
-  try {
-    await Auth.login(email, password);
-  } catch (error) {
-    showToast(error.message || 'Login failed', 'error');
-    btnText.classList.remove('hidden');
-    btnLoader.classList.add('hidden');
-  }
-});
-
-// Register form handler
-document.getElementById('registerFormElement')?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  
-  const email = document.getElementById('registerEmail').value;
-  const password = document.getElementById('registerPassword').value;
-  const confirmPassword = document.getElementById('confirmPassword').value;
-  const btnText = document.getElementById('registerBtnText');
-  const btnLoader = document.getElementById('registerBtnLoader');
-
-  // Validate passwords match
-  if (password !== confirmPassword) {
-    showToast('Passwords do not match', 'error');
-    return;
+      try {
+        await Auth.login(email, password);
+      } catch (error) {
+        showToast(error.message || 'Login failed', 'error');
+        btnText.classList.remove('hidden');
+        btnLoader.classList.add('hidden');
+      }
+    });
   }
 
-  btnText.classList.add('hidden');
-  btnLoader.classList.remove('hidden');
+  // Register form handler
+  const registerForm = document.getElementById('registerFormElement');
+  if (registerForm) {
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('registerEmail').value;
+      const password = document.getElementById('registerPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const btnText = document.getElementById('registerBtnText');
+      const btnLoader = document.getElementById('registerBtnLoader');
 
-  try {
-    await Auth.register(email, password);
-    // Switch to login tab
-    document.querySelector('[data-tab="login"]').click();
-    // Clear form
-    e.target.reset();
-  } catch (error) {
-    showToast(error.message || 'Registration failed', 'error');
-  } finally {
-    btnText.classList.remove('hidden');
-    btnLoader.classList.add('hidden');
+      // Validate passwords match
+      if (password !== confirmPassword) {
+        showToast('Passwords do not match', 'error');
+        return;
+      }
+
+      btnText.classList.add('hidden');
+      btnLoader.classList.remove('hidden');
+
+      try {
+        await Auth.register(email, password);
+        // Switch to login tab
+        document.querySelector('[data-tab="login"]')?.click();
+        // Clear form
+        e.target.reset();
+      } catch (error) {
+        showToast(error.message || 'Registration failed', 'error');
+      } finally {
+        btnText.classList.remove('hidden');
+        btnLoader.classList.add('hidden');
+      }
+    });
   }
-});
 
-// Logout button
-document.getElementById('logoutBtn')?.addEventListener('click', () => {
-  Auth.logout();
+  // Logout button
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      Auth.logout();
+    });
+  }
 });

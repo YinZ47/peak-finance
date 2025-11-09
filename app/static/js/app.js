@@ -7,7 +7,16 @@
  * Show toast notification
  */
 function showToast(message, type = 'info', duration = 3000) {
-  const toast = document.getElementById('toast');
+  let toast = document.getElementById('toast');
+  
+  // Create toast if it doesn't exist
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast';
+    toast.className = 'toast hidden';
+    document.body.appendChild(toast);
+  }
+  
   toast.textContent = message;
   toast.className = `toast ${type}`;
   
@@ -19,18 +28,25 @@ function showToast(message, type = 'info', duration = 3000) {
 /**
  * Mobile nav toggle
  */
-const navToggle = document.getElementById('navToggle');
-const navMenu = document.getElementById('navMenu');
+document.addEventListener('DOMContentLoaded', function() {
+  const navToggle = document.getElementById('navToggle');
+  const navMenu = document.getElementById('navMenu');
 
-navToggle?.addEventListener('click', () => {
-  navMenu.classList.toggle('active');
-});
+  if (navToggle && navMenu) {
+    navToggle.addEventListener('click', () => {
+      navMenu.classList.toggle('active');
+    });
+  }
 
-// Close nav on link click (mobile)
-document.querySelectorAll('.nav-link').forEach(link => {
-  link.addEventListener('click', () => {
-    navMenu.classList.remove('active');
+  // Close nav on link click (mobile)
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', () => {
+      navMenu?.classList.remove('active');
+    });
   });
+
+  // Update nav UI on page load
+  Auth.updateNavUI();
 });
 
 /**
@@ -47,13 +63,6 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       });
     }
   });
-});
-
-/**
- * Update nav UI on page load
- */
-document.addEventListener('DOMContentLoaded', () => {
-  Auth.updateNavUI();
 });
 
 /**

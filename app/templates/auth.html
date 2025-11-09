@@ -73,25 +73,28 @@
 
 {% block extra_js %}
 <script>
-// Tab switching
-document.querySelectorAll('.auth-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-        const tabName = tab.dataset.tab;
-        
-        // Update tabs
-        document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        
-        // Update forms
-        document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
-        document.getElementById(tabName + 'Form').classList.add('active');
+// Ensure DOM is fully loaded before initializing
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab switching
+    document.querySelectorAll('.auth-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabName = tab.dataset.tab;
+            
+            // Update tabs
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            // Update forms
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+            document.getElementById(tabName + 'Form').classList.add('active');
+        });
     });
-});
 
-// Check URL params
-const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.get('mode') === 'register') {
-    document.querySelector('[data-tab="register"]').click();
-}
+    // Check URL params for initial tab
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('mode') === 'register') {
+        document.querySelector('[data-tab="register"]')?.click();
+    }
+});
 </script>
 {% endblock %}

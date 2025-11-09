@@ -50,25 +50,27 @@ def login(user_data: UserLogin, response: Response, db: Session = Depends(get_db
     # Create token
     access_token = create_access_token(data={"sub": user.id})
     
-    # Set httpOnly cookie for web
+    # Set httpOnly cookie for web (primary auth method)
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
         secure=False,  # Set True in production with HTTPS
         samesite="lax",
-        max_age=86400  # 1 day
+        max_age=86400,  # 1 day
+        path="/"  # Ensure cookie is sent to all paths
     )
     
     log_action(db, "user_login", user)
     
+    # Return token for localStorage (fallback)
     return {"access_token": access_token, "token_type": "bearer"}
 
 
 @router.post("/logout")
 def logout(response: Response):
     """Logout by clearing cookie."""
-    response.delete_cookie("access_token")
+    response.delete_cookie("access_token", path="/")
     return {"message": "Logged out successfully"}
 
 

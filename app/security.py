@@ -10,8 +10,12 @@ from app.settings import settings
 from app.db import get_db
 from app.models import User
 
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Password hashing with explicit bcrypt rounds
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__rounds=12  # Explicit rounds, prevent auto-tuning issues
+)
 
 # JWT Bearer
 security = HTTPBearer(auto_error=False)
@@ -19,15 +23,32 @@ security = HTTPBearer(auto_error=False)
 # Algorithm
 ALGORITHM = "HS256"
 
+# Bcrypt has a 72-byte limit, so we truncate safely
+MAX_PASSWORD_LENGTH = 72
+
+
+def _prepare_password(password: str) -> bytes:
+    """
+    Prepare password for bcrypt hashing.
+    Bcrypt has a 72-byte limit, so we truncate UTF-8 encoded passwords.
+    """
+    password_bytes = password.encode('utf-8')
+    if len(password_bytes) > MAX_PASSWORD_LENGTH:
+        # Truncate to 72 bytes (this is standard bcrypt behavior)
+        password_bytes = password_bytes[:MAX_PASSWORD_LENGTH]
+    return password_bytes
+
 
 def hash_password(password: str) -> str:
-    """Hash a password using bcrypt."""
-    return pwd_context.hash(password)
+    """Hash a password using bcrypt with 72-byte safe truncation."""
+    password_bytes = _prepare_password(password)
+    return pwd_context.hash(password_bytes)
 
 
 def verify_password(plain: str, hashed: str) -> bool:
     """Verify a password against its hash."""
-    return pwd_context.verify(plain, hashed)
+    password_bytes = _prepare_password(plain)
+    return pwd_context.verify(password_bytes, hashed)
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
