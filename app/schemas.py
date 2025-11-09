@@ -203,14 +203,13 @@ class InflationForecastResponse(BaseModel):
 class DashboardSummary(BaseModel):
     """Dashboard summary response."""
     total_income: float
-    total_fixed_expenses: float
-    total_variable_expenses: float
-    total_debt_emi: float
-    total_savings_needed: float
-    remaining_balance: float
+    total_expenses: float
+    surplus: float
     dti: float
     safe_to_spend: float
     fun_budget: float
+    goal_progress_pct: float
+    debt_payoff_eta_months: Optional[int] = None
 
 
 # ============= AI Schemas =============

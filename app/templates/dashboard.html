@@ -5,20 +5,114 @@
 {% block content %}
 <section class="dashboard-section">
     <div class="container">
+        <!-- Dashboard Header -->
         <div class="dashboard-header">
-            <h1>Financial Dashboard</h1>
-            <p>Your complete financial overview</p>
+            <div>
+                <h1>Welcome Back! 👋</h1>
+                <p id="userWelcome">Loading...</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="showProfileModal()">
+                    <i class="fas fa-user-circle"></i> Profile
+                </button>
+            </div>
         </div>
 
-        <!-- Dashboard content will be loaded via JavaScript -->
-        <div id="dashboardContent">
-            <div class="loading-spinner">
-                <i class="fas fa-spinner fa-spin"></i>
-                <p>Loading your financial data...</p>
+        <!-- Quick Stats Cards -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card loading-placeholder">
+                <div class="stat-icon"><i class="fas fa-spinner fa-spin"></i></div>
+                <div class="stat-info">
+                    <p class="stat-label">Loading...</p>
+                    <h3 class="stat-value">---</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Content -->
+        <div class="dashboard-content-grid">
+            <!-- Left Column: Expenses & Debts -->
+            <div class="dashboard-col">
+                <!-- Expenses Section -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-receipt"></i> Expenses</h3>
+                        <button class="btn btn-small btn-primary" onclick="showAddExpenseModal()">
+                            <i class="fas fa-plus"></i> Add
+                        </button>
+                    </div>
+                    <div id="expensesList" class="items-list">
+                        <div class="loading-placeholder">
+                            <i class="fas fa-spinner fa-spin"></i> Loading expenses...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Debts Section -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-credit-card"></i> Debts & Loans</h3>
+                        <button class="btn btn-small btn-primary" onclick="showAddDebtModal()">
+                            <i class="fas fa-plus"></i> Add
+                        </button>
+                    </div>
+                    <div id="debtsList" class="items-list">
+                        <div class="loading-placeholder">
+                            <i class="fas fa-spinner fa-spin"></i> Loading debts...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Goals & Calculators -->
+            <div class="dashboard-col">
+                <!-- Goals Section -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-bullseye"></i> Financial Goals</h3>
+                        <button class="btn btn-small btn-primary" onclick="showAddGoalModal()">
+                            <i class="fas fa-plus"></i> Add
+                        </button>
+                    </div>
+                    <div id="goalsList" class="items-list">
+                        <div class="loading-placeholder">
+                            <i class="fas fa-spinner fa-spin"></i> Loading goals...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Tools -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-calculator"></i> Quick Tools</h3>
+                    </div>
+                    <div class="tools-grid">
+                        <button class="tool-button" onclick="showLoanCalculator()">
+                            <i class="fas fa-hand-holding-usd"></i>
+                            <span>Loan Calculator</span>
+                        </button>
+                        <button class="tool-button" onclick="showInflationCalculator()">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Inflation Forecast</span>
+                        </button>
+                        <button class="tool-button" onclick="showAIAdvisor()">
+                            <i class="fas fa-robot"></i>
+                            <span>AI Advisor</span>
+                        </button>
+                        <button class="tool-button" onclick="showDataImport()">
+                            <i class="fas fa-file-import"></i>
+                            <span>Import Data</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </section>
+
+<!-- Modals will be injected here -->
+<div id="modalContainer"></div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -28,107 +122,530 @@ if (!Auth.isAuthenticated()) {
     window.location.href = '/auth';
 }
 
-const dashboardContent = document.getElementById('dashboardContent');
+// Dashboard state
+let dashboardData = {
+    user: null,
+    expenses: [],
+    debts: [],
+    goals: [],
+    summary: null
+};
 
-function renderDashboard(summary) {
-    const debtEtaText = summary.debt_payoff_eta_months !== null && summary.debt_payoff_eta_months !== undefined
-        ? `${summary.debt_payoff_eta_months} month${summary.debt_payoff_eta_months === 1 ? '' : 's'}`
-        : 'No active debt goals yet';
+// Initialize dashboard
+async function initDashboard() {
+    try {
+        await loadUserProfile();
+        await Promise.all([
+            loadDashboardSummary(),
+            loadExpenses(),
+            loadDebts(),
+            loadGoals()
+        ]);
+    } catch (error) {
+        console.error('Dashboard initialization error:', error);
+        showToast(error.message || 'Failed to load dashboard', 'error');
+    }
+}
 
-    const goalProgress = summary.goal_progress_pct || 0;
-    const funRatio = summary.total_income > 0 ? (summary.fun_budget / summary.total_income) : 0;
+// Load user profile
+async function loadUserProfile() {
+    try {
+        dashboardData.user = await API.get('/auth/me');
+        document.getElementById('userWelcome').textContent = 
+            `${dashboardData.user.email} | Income: ৳${formatNumber(dashboardData.user.monthly_net_income)}`;
+    } catch (error) {
+        throw new Error('Failed to load user profile');
+    }
+}
 
-    dashboardContent.innerHTML = `
-        <div class="dashboard-grid">
-            <div class="dashboard-card">
-                <h3>Total Income</h3>
-                <p class="metric-value">${formatCurrency(summary.total_income)}</p>
-                <p class="metric-sub">Monthly net income</p>
-            </div>
-            <div class="dashboard-card">
-                <h3>Total Expenses</h3>
-                <p class="metric-value">${formatCurrency(summary.total_expenses)}</p>
-                <p class="metric-sub">Tracked essential + variable</p>
-            </div>
-            <div class="dashboard-card highlight">
-                <h3>Monthly Surplus</h3>
-                <p class="metric-value">${formatCurrency(summary.surplus)}</p>
-                <p class="metric-sub">After debt and expenses</p>
-            </div>
-            <div class="dashboard-card">
-                <h3>Debt-to-Income</h3>
-                <p class="metric-value">${formatPercent(summary.dti)}</p>
-                <p class="metric-sub">Target &lt; 35%</p>
+// Load dashboard summary
+async function loadDashboardSummary() {
+    try {
+        dashboardData.summary = await API.get('/calc/dashboard');
+        renderSummaryCards();
+    } catch (error) {
+        console.error('Summary load error:', error);
+        // Show default summary for new users
+        renderDefaultSummary();
+    }
+}
+
+// Render default summary for new users
+function renderDefaultSummary() {
+    const statsGrid = document.getElementById('statsGrid');
+    const income = dashboardData.user?.monthly_net_income || 0;
+    
+    statsGrid.innerHTML = `
+        <div class="stat-card primary">
+            <div class="stat-icon"><i class="fas fa-wallet"></i></div>
+            <div class="stat-info">
+                <p class="stat-label">Monthly Income</p>
+                <h3 class="stat-value">৳${formatNumber(income)}</h3>
+                ${income === 0 ? '<p class="stat-note"><small>Set your income in profile</small></p>' : ''}
             </div>
         </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+            <div class="stat-info">
+                <p class="stat-label">Getting Started</p>
+                <h3 class="stat-value">Welcome!</h3>
+                <p class="stat-note"><small>Add expenses and goals below</small></p>
+            </div>
+        </div>
+        <div class="stat-card success">
+            <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-info">
+                <p class="stat-label">Status</p>
+                <h3 class="stat-value">Ready</h3>
+                <p class="stat-note"><small>Start tracking your finances</small></p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-lightbulb"></i></div>
+            <div class="stat-info">
+                <p class="stat-label">Quick Tip</p>
+                <h3 class="stat-value">Track!</h3>
+                <p class="stat-note"><small>Add your first expense</small></p>
+            </div>
+        </div>
+    `;
+}
 
-        <div class="dashboard-grid secondary">
-            <div class="dashboard-card">
-                <h3>Safe to Spend</h3>
-                <p class="metric-value">${formatCurrency(summary.safe_to_spend)}</p>
-                <p class="metric-sub">Discretionary buffer this month</p>
+// Load expenses
+async function loadExpenses() {
+    try {
+        dashboardData.expenses = await API.get('/profile/expenses');
+        renderExpenses();
+    } catch (error) {
+        document.getElementById('expensesList').innerHTML = 
+            '<p class="empty-state">No expenses yet. <a href="#" onclick="showAddExpenseModal()">Add your first expense</a></p>';
+    }
+}
+
+// Load debts
+async function loadDebts() {
+    try {
+        dashboardData.debts = await API.get('/profile/debts');
+        renderDebts();
+    } catch (error) {
+        document.getElementById('debtsList').innerHTML = 
+            '<p class="empty-state">No debts tracked. <a href="#" onclick="showAddDebtModal()">Add a loan</a></p>';
+    }
+}
+
+// Load goals
+async function loadGoals() {
+    try {
+        dashboardData.goals = await API.get('/profile/goals');
+        renderGoals();
+    } catch (error) {
+        document.getElementById('goalsList').innerHTML = 
+            '<p class="empty-state">No goals set. <a href="#" onclick="showAddGoalModal()">Set your first goal</a></p>';
+    }
+}
+
+// Render summary cards
+function renderSummaryCards() {
+    const s = dashboardData.summary;
+    if (!s) return;
+
+    const statsGrid = document.getElementById('statsGrid');
+    statsGrid.innerHTML = `
+        <div class="stat-card primary">
+            <div class="stat-icon"><i class="fas fa-wallet"></i></div>
+            <div class="stat-info">
+                <p class="stat-label">Monthly Income</p>
+                <h3 class="stat-value">৳${formatNumber(s.total_income)}</h3>
             </div>
-            <div class="dashboard-card">
-                <h3>Fun Budget</h3>
-                <p class="metric-value">${formatCurrency(summary.fun_budget)}</p>
-                <p class="metric-sub">${formatPercent(funRatio)}</p>
+        </div>
+        <div class="stat-card ${s.surplus >= 0 ? 'success' : 'danger'}">
+            <div class="stat-icon"><i class="fas fa-${s.surplus >= 0 ? 'arrow-up' : 'arrow-down'}"></i></div>
+            <div class="stat-info">
+                <p class="stat-label">Monthly Surplus</p>
+                <h3 class="stat-value">৳${formatNumber(s.surplus)}</h3>
             </div>
-            <div class="dashboard-card">
-                <h3>Goal Progress</h3>
-                <div class="progress-bar" role="progressbar"
-                     aria-valuenow="${goalProgress}" aria-valuemin="0" aria-valuemax="100">
-                    <span style="width: ${Math.min(goalProgress, 100)}%"></span>
+        </div>
+        <div class="stat-card ${s.dti < 0.35 ? 'success' : s.dti < 0.45 ? 'warning' : 'danger'}">
+            <div class="stat-icon"><i class="fas fa-percentage"></i></div>
+            <div class="stat-info">
+                <p class="stat-label">Debt-to-Income</p>
+                <h3 class="stat-value">${(s.dti * 100).toFixed(1)}%</h3>
+            </div>
+        </div>
+        <div class="stat-card success">
+            <div class="stat-icon"><i class="fas fa-hand-holding-usd"></i></div>
+            <div class="stat-info">
+                <p class="stat-label">Safe to Spend</p>
+                <h3 class="stat-value">৳${formatNumber(s.safe_to_spend)}</h3>
+            </div>
+        </div>
+    `;
+}
+
+// Render expenses
+function renderExpenses() {
+    const list = document.getElementById('expensesList');
+    if (!dashboardData.expenses || dashboardData.expenses.length === 0) {
+        list.innerHTML = '<p class="empty-state">No expenses yet. <a href="#" onclick="showAddExpenseModal()">Add your first expense</a></p>';
+        return;
+    }
+
+    const totalFixed = dashboardData.expenses.filter(e => e.type === 'fixed').reduce((sum, e) => sum + e.amount, 0);
+    const totalVariable = dashboardData.expenses.filter(e => e.type === 'variable').reduce((sum, e) => sum + e.amount, 0);
+
+    list.innerHTML = `
+        <div class="list-summary">
+            <div class="summary-item">
+                <span>Fixed: ৳${formatNumber(totalFixed)}</span>
+                <span>Variable: ৳${formatNumber(totalVariable)}</span>
+            </div>
+            <div class="summary-total">Total: ৳${formatNumber(totalFixed + totalVariable)}</div>
+        </div>
+        ${dashboardData.expenses.map(expense => `
+            <div class="list-item">
+                <div class="item-icon ${expense.type}">
+                    <i class="fas fa-${expense.type === 'fixed' ? 'home' : 'shopping-cart'}"></i>
                 </div>
-                <p class="metric-sub">${goalProgress.toFixed(1)}% of targets saved</p>
+                <div class="item-content">
+                    <div class="item-name">${escapeHtml(expense.name)}</div>
+                    <div class="item-meta">${expense.type}</div>
+                </div>
+                <div class="item-amount">৳${formatNumber(expense.amount)}</div>
+                <button class="item-delete" onclick="deleteExpense(${expense.id})" title="Delete">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
-            <div class="dashboard-card">
-                <h3>Debt Payoff ETA</h3>
-                <p class="metric-value">${debtEtaText}</p>
-                <p class="metric-sub">Based on current EMI totals</p>
-            </div>
-        </div>
-
-        <div class="dashboard-actions">
-            <h3>Next steps</h3>
-            <p>Jump into the tools to add expenses, plan loans, or explore features.</p>
-            <div class="action-buttons">
-                <a class="btn btn-primary" href="/#features">Explore Features</a>
-                <a class="btn btn-outline" href="/#tools">Open Calculators</a>
-                <a class="btn btn-outline" href="/">Back to Home</a>
-            </div>
-        </div>
+        `).join('')}
     `;
 }
 
-function showDashboardError(message) {
-    dashboardContent.innerHTML = `
-        <div class="dashboard-error">
-            <i class="fas fa-circle-exclamation"></i>
-            <p>${message}</p>
-            <button class="btn btn-primary" id="retryDashboard">Retry</button>
-        </div>
-    `;
+// Render debts
+function renderDebts() {
+    const list = document.getElementById('debtsList');
+    if (!dashboardData.debts || dashboardData.debts.length === 0) {
+        list.innerHTML = '<p class="empty-state">No debts tracked. <a href="#" onclick="showAddDebtModal()">Add a loan</a></p>';
+        return;
+    }
 
-    document.getElementById('retryDashboard')?.addEventListener('click', loadDashboard);
+    const totalEMI = dashboardData.debts.reduce((sum, d) => sum + d.current_emi, 0);
+
+    list.innerHTML = `
+        <div class="list-summary">
+            <div class="summary-total">Total EMI: ৳${formatNumber(totalEMI)}/month</div>
+        </div>
+        ${dashboardData.debts.map(debt => `
+            <div class="list-item">
+                <div class="item-icon debt">
+                    <i class="fas fa-credit-card"></i>
+                </div>
+                <div class="item-content">
+                    <div class="item-name">${escapeHtml(debt.name)}</div>
+                    <div class="item-meta">৳${formatNumber(debt.principal)} @ ${debt.annual_rate_pct}% | ${debt.term_months}mo</div>
+                </div>
+                <div class="item-amount">৳${formatNumber(debt.current_emi)}/mo</div>
+                <button class="item-delete" onclick="deleteDebt(${debt.id})" title="Delete">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `).join('')}
+    `;
 }
 
-function loadDashboard() {
-    dashboardContent.innerHTML = `
-        <div class="loading-spinner">
-            <i class="fas fa-spinner fa-spin"></i>
-            <p>Loading your financial data...</p>
-        </div>
-    `;
+// Render goals
+function renderGoals() {
+    const list = document.getElementById('goalsList');
+    if (!dashboardData.goals || dashboardData.goals.length === 0) {
+        list.innerHTML = '<p class="empty-state">No goals set. <a href="#" onclick="showAddGoalModal()">Set your first goal</a></p>';
+        return;
+    }
 
-    API.get('/calc/dashboard')
-        .then(renderDashboard)
-        .catch((error) => {
-            const message = error?.message || 'Failed to load dashboard';
-            showDashboardError(message);
-            showToast(message, 'error');
-        });
+    list.innerHTML = dashboardData.goals.map(goal => {
+        const progress = (goal.saved_amount / goal.target_amount) * 100;
+        return `
+            <div class="list-item">
+                <div class="item-icon goal">
+                    <i class="fas fa-bullseye"></i>
+                </div>
+                <div class="item-content">
+                    <div class="item-name">${escapeHtml(goal.name)}</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${Math.min(progress, 100)}%"></div>
+                    </div>
+                    <div class="item-meta">৳${formatNumber(goal.saved_amount)} / ৳${formatNumber(goal.target_amount)} (${progress.toFixed(1)}%)</div>
+                </div>
+                <button class="item-delete" onclick="deleteGoal(${goal.id})" title="Delete">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+    }).join('');
 }
 
-loadDashboard();
+// Helper functions
+function formatNumber(num) {
+    return new Intl.NumberFormat('en-BD').format(Math.round(num));
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Modal functions
+function showProfileModal() {
+    const modal = createModal('Update Profile', `
+        <form id="profileForm" class="form">
+            <div class="form-group">
+                <label>Monthly Net Income (৳)</label>
+                <input type="number" id="monthlyIncome" value="${dashboardData.user.monthly_net_income}" required>
+            </div>
+            <div class="form-group">
+                <label>Risk Tolerance</label>
+                <select id="riskTolerance">
+                    <option value="low" ${dashboardData.user.risk_tolerance === 'low' ? 'selected' : ''}>Low</option>
+                    <option value="medium" ${dashboardData.user.risk_tolerance === 'medium' ? 'selected' : ''}>Medium</option>
+                    <option value="high" ${dashboardData.user.risk_tolerance === 'high' ? 'selected' : ''}>High</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Update</button>
+            </div>
+        </form>
+    `);
+
+    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+            await API.post('/profile', {
+                monthly_net_income: parseFloat(document.getElementById('monthlyIncome').value),
+                risk_tolerance: document.getElementById('riskTolerance').value
+            });
+            showToast('Profile updated successfully!', 'success');
+            closeModal();
+            initDashboard();
+        } catch (error) {
+            showToast(error.message, 'error');
+        }
+    });
+}
+
+function showAddExpenseModal() {
+    const modal = createModal('Add Expense', `
+        <form id="expenseForm" class="form">
+            <div class="form-group">
+                <label>Expense Name</label>
+                <input type="text" id="expenseName" placeholder="e.g., Rent, Groceries" required>
+            </div>
+            <div class="form-group">
+                <label>Amount (৳)</label>
+                <input type="number" id="expenseAmount" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label>Type</label>
+                <select id="expenseType" required>
+                    <option value="fixed">Fixed (rent, utilities)</option>
+                    <option value="variable">Variable (groceries, entertainment)</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Add Expense</button>
+            </div>
+        </form>
+    `);
+
+    document.getElementById('expenseForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+            await API.post('/profile/expenses', {
+                name: document.getElementById('expenseName').value,
+                amount: parseFloat(document.getElementById('expenseAmount').value),
+                type: document.getElementById('expenseType').value
+            });
+            showToast('Expense added successfully!', 'success');
+            closeModal();
+            await loadExpenses();
+            await loadDashboardSummary();
+        } catch (error) {
+            showToast(error.message, 'error');
+        }
+    });
+}
+
+function showAddDebtModal() {
+    const modal = createModal('Add Debt/Loan', `
+        <form id="debtForm" class="form">
+            <div class="form-group">
+                <label>Loan Name</label>
+                <input type="text" id="debtName" placeholder="e.g., Home Loan, Car Loan" required>
+            </div>
+            <div class="form-group">
+                <label>Principal Amount (৳)</label>
+                <input type="number" id="debtPrincipal" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label>Annual Interest Rate (%)</label>
+                <input type="number" id="debtRate" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label>Term (months)</label>
+                <input type="number" id="debtTerm" required>
+            </div>
+            <div class="form-group">
+                <label>Current EMI (৳)</label>
+                <input type="number" id="debtEMI" step="0.01" required>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Add Debt</button>
+            </div>
+        </form>
+    `);
+
+    document.getElementById('debtForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+            await API.post('/profile/debts', {
+                name: document.getElementById('debtName').value,
+                principal: parseFloat(document.getElementById('debtPrincipal').value),
+                annual_rate_pct: parseFloat(document.getElementById('debtRate').value),
+                term_months: parseInt(document.getElementById('debtTerm').value),
+                current_emi: parseFloat(document.getElementById('debtEMI').value)
+            });
+            showToast('Debt added successfully!', 'success');
+            closeModal();
+            await loadDebts();
+            await loadDashboardSummary();
+        } catch (error) {
+            showToast(error.message, 'error');
+        }
+    });
+}
+
+function showAddGoalModal() {
+    const modal = createModal('Add Financial Goal', `
+        <form id="goalForm" class="form">
+            <div class="form-group">
+                <label>Goal Name</label>
+                <input type="text" id="goalName" placeholder="e.g., Emergency Fund, Vacation" required>
+            </div>
+            <div class="form-group">
+                <label>Target Amount (৳)</label>
+                <input type="number" id="goalTarget" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label>Already Saved (৳)</label>
+                <input type="number" id="goalSaved" step="0.01" value="0">
+            </div>
+            <div class="form-group">
+                <label>Priority (1-10)</label>
+                <input type="number" id="goalPriority" min="1" max="10" value="5">
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Add Goal</button>
+            </div>
+        </form>
+    `);
+
+    document.getElementById('goalForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+            await API.post('/profile/goals', {
+                name: document.getElementById('goalName').value,
+                target_amount: parseFloat(document.getElementById('goalTarget').value),
+                saved_amount: parseFloat(document.getElementById('goalSaved').value),
+                priority: parseInt(document.getElementById('goalPriority').value)
+            });
+            showToast('Goal added successfully!', 'success');
+            closeModal();
+            await loadGoals();
+            await loadDashboardSummary();
+        } catch (error) {
+            showToast(error.message, 'error');
+        }
+    });
+}
+
+// Delete functions
+async function deleteExpense(id) {
+    if (!confirm('Delete this expense?')) return;
+    try {
+        await API.delete(`/profile/expenses/${id}`);
+        showToast('Expense deleted', 'success');
+        await loadExpenses();
+        await loadDashboardSummary();
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+async function deleteDebt(id) {
+    if (!confirm('Delete this debt?')) return;
+    try {
+        await API.delete(`/profile/debts/${id}`);
+        showToast('Debt deleted', 'success');
+        await loadDebts();
+        await loadDashboardSummary();
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+async function deleteGoal(id) {
+    if (!confirm('Delete this goal?')) return;
+    try {
+        await API.delete(`/profile/goals/${id}`);
+        showToast('Goal deleted', 'success');
+        await loadGoals();
+        await loadDashboardSummary();
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+// Tool functions (placeholders)
+function showLoanCalculator() {
+    showToast('Loan calculator coming soon!', 'info');
+}
+
+function showInflationCalculator() {
+    showToast('Inflation forecast coming soon!', 'info');
+}
+
+function showAIAdvisor() {
+    showToast('AI Advisor coming soon!', 'info');
+}
+
+function showDataImport() {
+    showToast('Data import coming soon!', 'info');
+}
+
+// Modal helper functions
+function createModal(title, content) {
+    const modalHTML = `
+        <div class="modal-overlay" onclick="closeModal()">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <h2>${title}</h2>
+                    <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    ${content}
+                </div>
+            </div>
+        </div>
+    `;
+    document.getElementById('modalContainer').innerHTML = modalHTML;
+}
+
+function closeModal() {
+    document.getElementById('modalContainer').innerHTML = '';
+}
+
+// Initialize on page load
+initDashboard();
 </script>
 {% endblock %}
