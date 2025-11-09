@@ -39,6 +39,45 @@ class APIClient {
   }
 
   /**
+   * Extract error message from various error formats
+   */
+  extractErrorMessage(data) {
+    if (!data) return 'Request failed';
+    
+    // If it's already a string
+    if (typeof data === 'string') return data;
+    
+    // Check for detail property (FastAPI standard)
+    if (data.detail) {
+      // If detail is a string
+      if (typeof data.detail === 'string') {
+        return data.detail;
+      }
+      
+      // If detail is an array (validation errors)
+      if (Array.isArray(data.detail)) {
+        return data.detail.map(err => {
+          if (typeof err === 'string') return err;
+          return err.msg || err.message || JSON.stringify(err);
+        }).join(', ');
+      }
+      
+      // If detail is an object
+      if (typeof data.detail === 'object') {
+        return data.detail.message || data.detail.msg || JSON.stringify(data.detail);
+      }
+    }
+    
+    // Check for message property
+    if (data.message) return data.message;
+    if (data.msg) return data.msg;
+    if (data.error) return data.error;
+    
+    // Last resort
+    return 'Request failed';
+  }
+
+  /**
    * Generic request handler
    */
   async request(endpoint, options = {}) {
@@ -60,16 +99,28 @@ class APIClient {
         throw new Error('Unauthorized - please login');
       }
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (e) {
+        // If response is not JSON
+        data = { detail: await response.text() || 'Request failed' };
+      }
 
       if (!response.ok) {
-        throw new Error(data.detail || 'Request failed');
+        const errorMessage = this.extractErrorMessage(data);
+        throw new Error(errorMessage);
       }
 
       return data;
     } catch (error) {
       console.error('API Error:', error);
-      throw error;
+      // Re-throw with a proper error message
+      if (error.message) {
+        throw error;
+      } else {
+        throw new Error('Network error. Please check your connection and try again.');
+      }
     }
   }
 

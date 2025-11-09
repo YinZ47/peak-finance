@@ -30,6 +30,29 @@ const Auth = {
    * Register new user
    */
   async register(email, password) {
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw new Error('Please enter a valid email address');
+    }
+    
+    // Validate password requirements
+    if (password.length < 8) {
+      throw new Error('Password must be at least 8 characters long');
+    }
+    
+    if (!/[A-Z]/.test(password)) {
+      throw new Error('Password must contain at least one uppercase letter');
+    }
+    
+    if (!/[a-z]/.test(password)) {
+      throw new Error('Password must contain at least one lowercase letter');
+    }
+    
+    if (!/[0-9]/.test(password)) {
+      throw new Error('Password must contain at least one number');
+    }
+    
     try {
       const user = await API.post('/auth/register', { email, password }, { auth: false });
       showToast('Account created! Please login.', 'success');
@@ -43,6 +66,11 @@ const Auth = {
    * Login user
    */
   async login(email, password) {
+    // Basic validation
+    if (!email || !password) {
+      throw new Error('Please enter both email and password');
+    }
+    
     try {
       const response = await API.post('/auth/login', { email, password }, { auth: false });
       

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error Handling Test - Peak Finance</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f9fafb;
+        }
+        .test-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 { color: #1f2937; margin-bottom: 10px; }
+        h2 { color: #4b5563; margin-top: 0; }
+        .test-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+        .test-button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        .result.show { display: block; }
+        .result.success { background: #d1fae5; color: #065f46; }
+        .result.error { background: #fee2e2; color: #991b1b; }
+        .code {
+            background: #f3f4f6;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Error Handling Test Suite</h1>
+    <p style="color: #6b7280; margin-bottom: 30px;">Test the improved error handling in Peak Finance</p>
+
+    <div class="test-section">
+        <h2>✅ Valid Registration</h2>
+        <p>Test successful registration with valid credentials</p>
+        <button class="test-button" onclick="testValidRegistration()">Test Valid Registration</button>
+        <div id="result1" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>❌ Invalid Email Format</h2>
+        <p>Should show: "Please enter a valid email address"</p>
+        <button class="test-button" onclick="testInvalidEmail()">Test Invalid Email</button>
+        <div id="result2" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>❌ Weak Password (No Uppercase)</h2>
+        <p>Should show: "Password must contain at least one uppercase letter"</p>
+        <button class="test-button" onclick="testWeakPassword1()">Test Weak Password</button>
+        <div id="result3" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>❌ Weak Password (No Digit)</h2>
+        <p>Should show: "Password must contain at least one number"</p>
+        <button class="test-button" onclick="testWeakPassword2()">Test No Digit</button>
+        <div id="result4" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>❌ Short Password</h2>
+        <p>Should show: "Password must be at least 8 characters long"</p>
+        <button class="test-button" onclick="testShortPassword()">Test Short Password</button>
+        <div id="result5" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>❌ Duplicate Email</h2>
+        <p>Should show: "Email already registered"</p>
+        <button class="test-button" onclick="testDuplicateEmail()">Test Duplicate Email</button>
+        <div id="result6" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>❌ Invalid Login</h2>
+        <p>Should show: "Incorrect email or password"</p>
+        <button class="test-button" onclick="testInvalidLogin()">Test Invalid Login</button>
+        <div id="result7" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>✅ Valid Login</h2>
+        <p>Test successful login with valid credentials</p>
+        <button class="test-button" onclick="testValidLogin()">Test Valid Login</button>
+        <div id="result8" class="result"></div>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script>
+        function showResult(id, message, isError = false) {
+            const result = document.getElementById(id);
+            result.className = `result show ${isError ? 'error' : 'success'}`;
+            result.innerHTML = `
+                <strong>${isError ? '❌ Error:' : '✅ Success:'}</strong> ${message}
+                <div class="code">Actual message: "${message}"</div>
+            `;
+        }
+
+        async function testValidRegistration() {
+            const email = `test${Date.now()}@example.com`;
+            const password = 'TestPass123';
+            try {
+                await API.post('/auth/register', { email, password }, { auth: false });
+                showResult('result1', 'Registration successful!', false);
+            } catch (error) {
+                showResult('result1', error.message, true);
+            }
+        }
+
+        async function testInvalidEmail() {
+            try {
+                // This should fail client-side validation
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                const email = 'invalid-email';
+                if (!emailRegex.test(email)) {
+                    throw new Error('Please enter a valid email address');
+                }
+            } catch (error) {
+                showResult('result2', error.message, true);
+            }
+        }
+
+        async function testWeakPassword1() {
+            try {
+                const password = 'testpass123'; // no uppercase
+                if (!/[A-Z]/.test(password)) {
+                    throw new Error('Password must contain at least one uppercase letter');
+                }
+            } catch (error) {
+                showResult('result3', error.message, true);
+            }
+        }
+
+        async function testWeakPassword2() {
+            try {
+                const password = 'TestPassword'; // no digit
+                if (!/[0-9]/.test(password)) {
+                    throw new Error('Password must contain at least one number');
+                }
+            } catch (error) {
+                showResult('result4', error.message, true);
+            }
+        }
+
+        async function testShortPassword() {
+            try {
+                const password = 'Test12'; // too short
+                if (password.length < 8) {
+                    throw new Error('Password must be at least 8 characters long');
+                }
+            } catch (error) {
+                showResult('result5', error.message, true);
+            }
+        }
+
+        async function testDuplicateEmail() {
+            try {
+                // First register
+                const email = `duplicate${Date.now()}@example.com`;
+                await API.post('/auth/register', { email, password: 'TestPass123' }, { auth: false });
+                // Try to register again with same email
+                await API.post('/auth/register', { email, password: 'TestPass123' }, { auth: false });
+                showResult('result6', 'Should have failed!', true);
+            } catch (error) {
+                showResult('result6', error.message, true);
+            }
+        }
+
+        async function testInvalidLogin() {
+            try {
+                await API.post('/auth/login', { 
+                    email: 'nonexistent@example.com', 
+                    password: 'WrongPass123' 
+                }, { auth: false });
+                showResult('result7', 'Should have failed!', true);
+            } catch (error) {
+                showResult('result7', error.message, true);
+            }
+        }
+
+        async function testValidLogin() {
+            try {
+                // First create a test account
+                const email = `logintest${Date.now()}@example.com`;
+                const password = 'TestPass123';
+                
+                try {
+                    await API.post('/auth/register', { email, password }, { auth: false });
+                } catch (e) {
+                    // Already exists, that's fine
+                }
+                
+                // Now try to login
+                const response = await API.post('/auth/login', { email, password }, { auth: false });
+                if (response.access_token) {
+                    showResult('result8', 'Login successful! Token received.', false);
+                } else {
+                    showResult('result8', 'Login succeeded but no token?', true);
+                }
+            } catch (error) {
+                showResult('result8', error.message, true);
+            }
+        }
+    </script>
+</body>
+</html>

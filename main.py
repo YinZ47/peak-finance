@@ -67,6 +67,12 @@ async def auth_page(request: Request):
     return templates.TemplateResponse("auth.html", {"request": request})
 
 
+@app.get("/test-errors")
+async def test_errors_page(request: Request):
+    """Error handling test page."""
+    return templates.TemplateResponse("test_errors.html", {"request": request})
+
+
 @app.get("/favicon.ico")
 async def favicon():
     """Serve the site favicon."""

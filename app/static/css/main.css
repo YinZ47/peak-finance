@@ -589,6 +589,11 @@ body {
   box-shadow: var(--shadow-lg);
   z-index: 9999;
   animation: slideIn 0.3s ease;
+  max-width: 400px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .toast.success {
@@ -597,10 +602,15 @@ body {
 
 .toast.error {
   background: var(--danger);
+  animation: shake 0.3s ease-in-out, slideIn 0.3s ease;
 }
 
 .toast.warning {
   background: var(--warning);
+}
+
+.toast.info {
+  background: #3b82f6;
 }
 
 @keyframes slideIn {
@@ -612,6 +622,12 @@ body {
     transform: translateX(0);
     opacity: 1;
   }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
 }
 
 /* ===== FOOTER ===== */
