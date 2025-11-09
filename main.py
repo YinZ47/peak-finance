@@ -3,6 +3,7 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pathlib import Path
 
 from app.db import init_db
@@ -64,6 +65,13 @@ async def dashboard(request: Request):
 async def auth_page(request: Request):
     """Auth page (login/register)."""
     return templates.TemplateResponse("auth.html", {"request": request})
+
+
+@app.get("/favicon.ico")
+async def favicon():
+    """Serve the site favicon."""
+    favicon_path = Path("app/static/favicon.ico")
+    return FileResponse(favicon_path)
 
 
 @app.get("/health")

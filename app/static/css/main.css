@@ -669,6 +669,104 @@ body {
   margin-bottom: 8px;
 }
 
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.dashboard-grid.secondary {
+  margin-top: 16px;
+}
+
+.dashboard-card {
+  background: white;
+  padding: 24px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dashboard-card.highlight {
+  border: 2px solid var(--success);
+}
+
+.dashboard-card h3 {
+  font-size: 18px;
+  color: var(--text-light);
+  font-weight: 600;
+}
+
+.metric-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.metric-sub {
+  font-size: 14px;
+  color: var(--text-light);
+}
+
+.progress-bar {
+  background: var(--bg-light);
+  border-radius: var(--radius);
+  height: 10px;
+  overflow: hidden;
+}
+
+.progress-bar span {
+  display: block;
+  height: 100%;
+  background: var(--primary);
+  transition: width 0.4s ease;
+}
+
+.dashboard-actions {
+  background: white;
+  padding: 28px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  margin-top: 16px;
+  text-align: center;
+}
+
+.dashboard-actions h3 {
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+.dashboard-actions p {
+  color: var(--text-light);
+  margin-bottom: 16px;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.dashboard-error {
+  background: white;
+  padding: 40px 24px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  text-align: center;
+  color: var(--danger);
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+}
+
+.dashboard-error i {
+  font-size: 40px;
+}
+
 .loading-spinner {
   text-align: center;
   padding: 60px;
@@ -719,6 +817,14 @@ body {
   .hero-stats {
     flex-direction: column;
     gap: 24px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .action-buttons {
+    flex-direction: column;
   }
 
   .features-grid,
