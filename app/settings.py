@@ -16,11 +16,18 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./app.db"
     
     # AI Provider (optional)
+    AI_PROVIDER: str = "openai"
     AI_BASE_URL: str = ""
-    AI_MODEL: str = "gpt-3.5-turbo"
+    AI_MODEL: str = "tiiuae/falcon-7b-instruct"
     AI_API_KEY: str = ""
     AI_TIMEOUT: int = 30
     AI_MAX_RETRIES: int = 2
+    AI_SYSTEM_PROMPT: str = (
+        "You are a helpful financial education assistant for users in Bangladesh. "
+        "Provide concise, actionable advice. Include formulas and explanations when relevant. "
+        "Always remind users this is educational guidance, not professional financial advice. "
+        "Use BDT (৳) for currency references."
+    )
     
     # Feature Flags
     IS_REGULATED_PARTNER: bool = False

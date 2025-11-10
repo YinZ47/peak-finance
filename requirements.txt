@@ -24,6 +24,7 @@ pandas==2.1.3
 
 # AI Integration (Optional)
 openai==1.3.7
+huggingface-hub==0.24.5
 
 # Templating
 jinja2==3.1.3

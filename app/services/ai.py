@@ -1,11 +1,9 @@
 """AI advisor service with provider abstraction and guardrails."""
-import json
-import re
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional
 from enum import Enum
 from app.settings import settings
 from app.models import User, AIRule
-from app.services.calculators import safe_to_spend, fun_budget
+from app.services.calculators import fun_budget
 from app.schemas import AIInsight
 
 
@@ -31,13 +29,19 @@ BLOCKED_INTENTS = {
 
 
 class AIProvider:
-    """AI provider abstraction (OpenAI-compatible or mock)."""
-    
+    """AI provider abstraction (Hugging Face, OpenAI-compatible, or mock)."""
+
     def __init__(self):
+        self.provider = (settings.AI_PROVIDER or "openai").lower().strip()
         self.base_url = settings.AI_BASE_URL
         self.model = settings.AI_MODEL
         self.api_key = settings.AI_API_KEY
-        self.is_configured = bool(self.base_url and self.api_key)
+        self.system_prompt = settings.AI_SYSTEM_PROMPT.strip()
+        if self.provider == "huggingface":
+            self.is_configured = bool(self.api_key and self.model)
+        else:
+            self.is_configured = bool(self.api_key and self.model)
+        self.active_provider = self.provider if self.is_configured else "mock"
     
     def generate_response(self, prompt: str, context: str) -> str:
         """
@@ -50,47 +54,94 @@ class AIProvider:
         Returns:
             AI-generated response
         """
-        if self.is_configured:
-            return self._call_openai(prompt, context)
-        else:
+        if not self.is_configured:
             return self._mock_response(prompt, context)
-    
+
+        if self.provider == "huggingface":
+            return self._call_huggingface(prompt, context)
+
+        return self._call_openai(prompt, context)
+
     def _call_openai(self, prompt: str, context: str) -> str:
         """Call OpenAI-compatible API."""
         try:
             from openai import OpenAI
-            
-            client = OpenAI(
-                base_url=self.base_url,
-                api_key=self.api_key,
-                timeout=settings.AI_TIMEOUT,
-                max_retries=settings.AI_MAX_RETRIES
-            )
-            
-            system_msg = (
-                "You are a helpful financial education assistant for users in Bangladesh. "
-                "Provide concise, actionable advice. Include formulas and explanations when relevant. "
-                "Always remind users this is educational guidance, not professional financial advice. "
-                "Use BDT (৳) for currency references."
-            )
-            
+
+            client_kwargs = {
+                "api_key": self.api_key,
+                "timeout": settings.AI_TIMEOUT,
+                "max_retries": settings.AI_MAX_RETRIES
+            }
+
+            if self.base_url:
+                client_kwargs["base_url"] = self.base_url
+
+            client = OpenAI(**client_kwargs)
+
             messages = [
-                {"role": "system", "content": system_msg},
+                {"role": "system", "content": self.system_prompt},
                 {"role": "user", "content": f"Context: {context}\n\nQuestion: {prompt}"}
             ]
-            
+
             response = client.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 temperature=0.7,
                 max_tokens=500
             )
-            
+
             return response.choices[0].message.content.strip()
-        
+
         except Exception as e:
             return f"AI service temporarily unavailable. Error: {str(e)}"
     
+    def _call_huggingface(self, prompt: str, context: str) -> str:
+        """Call Hugging Face Inference API using huggingface-hub client."""
+        try:
+            from huggingface_hub import InferenceClient  # type: ignore[import-not-found]
+
+            client = InferenceClient(model=self.model, token=self.api_key)
+
+            messages = [
+                {
+                    "role": "system",
+                    "content": self.system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        "Provide the response as a short narrative with bullet points when helpful.\n\n"
+                        f"Context:\n{context}\n\nQuestion:\n{prompt}"
+                    )
+                }
+            ]
+
+            result = client.chat_completion(
+                messages=messages,
+                max_tokens=400,
+                temperature=0.6,
+                top_p=0.9
+            )
+
+            if not getattr(result, "choices", None):
+                return "AI service responded without content. Please try again shortly."
+
+            message = result.choices[0].message
+            if isinstance(message, dict):
+                content = message.get("content", "").strip()
+            else:
+                content = getattr(message, "content", "").strip()
+
+            return content or "AI service responded without content. Please try again shortly."
+
+        except ImportError:
+            return (
+                "Hugging Face client is not installed. Run 'pip install huggingface-hub' "
+                "and restart the service."
+            )
+        except Exception as e:
+            return f"AI service temporarily unavailable. Error: {str(e)}"
+
     def _mock_response(self, prompt: str, context: str) -> str:
         """Generate deterministic mock response."""
         prompt_lower = prompt.lower()

@@ -70,7 +70,7 @@ def ask_ai(
     answer = provider.generate_response(request.question, context)
 
     meta.update({
-        "provider": "openai" if provider.is_configured else "mock",
+        "provider": provider.active_provider,
         "context_summary": context
     })
 
