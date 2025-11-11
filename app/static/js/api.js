@@ -110,11 +110,21 @@ class APIClient {
       }
 
       let data = null;
+      let rawBody = '';
+
       if (response.status !== 204) {
         try {
-          data = await response.json();
+          rawBody = await response.text();
         } catch (e) {
-          data = { detail: await response.text() || 'Request failed' };
+          rawBody = '';
+        }
+
+        if (rawBody && rawBody.trim().length) {
+          try {
+            data = JSON.parse(rawBody);
+          } catch (parseError) {
+            data = { detail: rawBody };
+          }
         }
       }
 
